@@ -110,6 +110,8 @@ Resources:
                 Resource:
                   - !Sub arn:aws:s3:::ci-artifacts-${AWS::AccountId}-${AWS::Region}
                   - !Sub arn:aws:s3:::ci-artifacts-${AWS::AccountId}-${AWS::Region}/*
+                  - !Sub arn:aws:s3:::ci-config-email-forwarder-${AWS::AccountId}-${AWS::Region}
+                  - !Sub arn:aws:s3:::ci-config-email-forwarder-${AWS::AccountId}-${AWS::Region}/*
 
   CloudFormationRole:
     Type: AWS::IAM::Role
@@ -199,7 +201,7 @@ Resources:
                 StackName: !Ref GitHubRepositoryName
                 RoleArn: !GetAtt CloudFormationRole.Arn
                 TemplatePath: artifact-build::template.packaged.yml
-                TemplateConfiguration: artifact-build::config.json
+                TemplateConfiguration: artifact-config::config.json
             - Name: manual-approval
               RunOrder: 2
               ActionTypeId:

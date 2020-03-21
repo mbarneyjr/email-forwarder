@@ -7,7 +7,7 @@ phases:
       - echo "Installing dependencies"
   build:
     commands:
-      - make package
+      - make build
 artifacts:
   files:
     - template.packaged.yml
