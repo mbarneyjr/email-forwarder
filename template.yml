@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cloudformation to forward SES email to another address
+
+
+Parameters:
+  FromAddress:
+    Description: Email forwarded from address
+    Type: String
+  ToAddress:
+    Description: Email forwarded to address
+    Type: String
+
+
+Resources:
+  ReceiptRuleSet:
+    Type: AWS::SES::ReceiptRuleSet
+    Properties:
+      RuleSetName: default-rule-set
+
+  ReceiptRule:
+    Type: AWS::SES::ReceiptRule
+    Properties:
+      RuleSetName: !Ref ReceiptRuleSet
+      Rule:
+        Name: !Sub ${AWS::StackName}-receipt-rule
+        Enabled: true
+        ScanEnabled: true
+        Actions:
+          - S3Action:
+              BucketName: !Ref EmailBucket
+              ObjectKeyPrefix: ''
+          - SNSAction:
+              Encoding: UTF-8
+              TopicArn:
+                Ref: EmailForwarderTopic
+
+  EmailForwarderTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-topic
+      Subscription:
+        - Endpoint: !GetAtt EmailForwarderFunction.Arn
+          Protocol: lambda
+
+  EmailForwarderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Timeout: 30
+      Environment:
+        Variables:
+          FROM_ADDRESS: !Ref FromAddress
+          TO_ADDRESS: !Ref ToAddress
+      Events:
+        SNSEmail:
+          Type: SNS
+          Properties:
+            Topic: !Ref EmailForwarderTopic
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: arn:aws:logs:*:*:*
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
+
+  EmailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+  EmailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref EmailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSESPuts
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub arn:aws:s3:::${EmailBucket}/*
+            Condition:
+              StringEquals:
+                aws:Referer: !Ref AWS::AccountId
