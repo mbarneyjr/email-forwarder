@@ -100,7 +100,7 @@ Resources:
                   - logs:PutLogEvents
               - Effect: Allow
                 Action: iam:PassRole
-                Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/ci-cloudformation
+                Resource: !GetAtt CloudFormationRole.Arn
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -112,6 +112,9 @@ Resources:
                   - !Sub arn:aws:s3:::ci-artifacts-${AWS::AccountId}-${AWS::Region}/*
                   - !Sub arn:aws:s3:::ci-config-email-forwarder-${AWS::AccountId}-${AWS::Region}
                   - !Sub arn:aws:s3:::ci-config-email-forwarder-${AWS::AccountId}-${AWS::Region}/*
+              - Resource: '*'
+                Effect: Allow
+                Action: cloudformation:*
 
   CloudFormationRole:
     Type: AWS::IAM::Role
@@ -189,6 +192,7 @@ Resources:
               RunOrder: 1
               InputArtifacts:
                 - Name: artifact-build
+                - Name: artifact-config
               ActionTypeId:
                 Category: Deploy
                 Provider: CloudFormation
@@ -236,4 +240,3 @@ Resources:
         Type: LINUX_CONTAINER
         Image: !Ref BuildImageName
       ServiceRole: !GetAtt PipelineServiceRole.Arn
-      EncryptionKey: alias/artifact-bucket
