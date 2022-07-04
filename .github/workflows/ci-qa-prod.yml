@@ -1,0 +1,59 @@
+name: release-qa-prod
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APPLICATION_NAME: mbarneyme
+
+permissions:
+  id-token: write
+  contents: write
+  packages: read
+
+jobs:
+  deploy_qa:
+    runs-on: ubuntu-latest
+    container: ghcr.io/mbarneyjr/ci-docker-image:latest
+    environment: qa
+    env:
+      TARGET_ACCOUNT_ID: 636764172597
+      ENVIRONMENT_NAME: qa
+      FROM_ADDRESS: qa.mbarney.me
+      TO_ADDRESS: mbarneyme@gmail.com
+    steps:
+      - uses: actions/checkout@v2
+      - name: Assume role
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.TARGET_ACCOUNT_ID }}:role/github-actions
+          role-session-name: GitHubActions-${{ github.run_id }}
+      - name: Deploy hosting infrastructure
+        id: deploy_hosting
+        run: |
+          make deploy
+  deploy_prod:
+    needs: deploy_qa
+    runs-on: ubuntu-latest
+    container: ghcr.io/mbarneyjr/ci-docker-image:latest
+    environment: prod
+    env:
+      TARGET_ACCOUNT_ID: 466268039534
+      ENVIRONMENT_NAME: prod
+      FROM_ADDRESS: mbarney.me
+      TO_ADDRESS: mbarneyme@gmail.com
+    steps:
+      - uses: actions/checkout@v2
+      - name: Assume role
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.TARGET_ACCOUNT_ID }}:role/github-actions
+          role-session-name: GitHubActions-${{ github.run_id }}
+      - name: Deploy hosting infrastructure
+        id: deploy_hosting
+        run: |
+          make deploy

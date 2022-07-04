@@ -4,26 +4,27 @@ Description: Cloudformation to forward SES email to another address
 
 
 Parameters:
+  ApplicationName:
+    Type: String
+    Description: The name of the application to deploy
+  EnvironmentName:
+    Type: String
+    Description: The name of the environment to deploy
   FromAddress:
+    Type: String
     Description: Email forwarded from address
-    Type: String
   ToAddress:
-    Description: Email forwarded to address
     Type: String
+    Description: Email forwarded to address
 
 
 Resources:
-  ReceiptRuleSet:
-    Type: AWS::SES::ReceiptRuleSet
-    Properties:
-      RuleSetName: default-rule-set
-
   ReceiptRule:
     Type: AWS::SES::ReceiptRule
     Properties:
-      RuleSetName: !Ref ReceiptRuleSet
+      RuleSetName: default
       Rule:
-        Name: !Sub ${AWS::StackName}-receipt-rule
+        Name: !Sub ${ApplicationName}-${EnvironmentName}-rule
         Enabled: true
         ScanEnabled: true
         Actions:
@@ -32,13 +33,12 @@ Resources:
               ObjectKeyPrefix: ''
           - SNSAction:
               Encoding: UTF-8
-              TopicArn:
-                Ref: EmailForwarderTopic
+              TopicArn: !Ref EmailForwarderTopic
 
   EmailForwarderTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${AWS::StackName}-topic
+      TopicName: !Sub ${ApplicationName}-${EnvironmentName}-receipt-topic
       Subscription:
         - Endpoint: !GetAtt EmailForwarderFunction.Arn
           Protocol: lambda
@@ -46,9 +46,10 @@ Resources:
   EmailForwarderFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${ApplicationName}-${EnvironmentName}-receipt-function
       CodeUri: src/
       Handler: app.handler
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Timeout: 30
       Environment:
         Variables:
@@ -73,12 +74,20 @@ Resources:
                 - ses:SendEmail
                 - ses:SendRawEmail
               Resource: '*'
+  EmailForwarderLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${EmailForwarderFunction}
 
   EmailBucket:
     Type: AWS::S3::Bucket
     Properties:
+      BucketName: !Sub ${ApplicationName}-${EnvironmentName}-email-storage
       VersioningConfiguration:
         Status: Enabled
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
   EmailBucketPolicy:
     Type: AWS::S3::BucketPolicy

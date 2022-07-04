@@ -1,0 +1,36 @@
+name: release-dev
+
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  TARGET_ACCOUNT_ID: 101010036321
+  APPLICATION_NAME: email-forwarder
+  ENVIRONMENT_NAME: dev
+  FROM_ADDRESS: dev.mbarney.me
+  TO_ADDRESS: mbarneyme@gmail.com
+
+permissions:
+  id-token: write
+  contents: write
+  packages: read
+
+jobs:
+  deploy_dev:
+    runs-on: ubuntu-latest
+    container: ghcr.io/mbarneyjr/ci-docker-image:latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v2
+      - name: Assume role
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ env.TARGET_ACCOUNT_ID }}:role/github-actions
+          role-session-name: GitHubActions-${{ github.run_id }}
+      - name: Deploy hosting infrastructure
+        id: deploy_hosting
+        run: |
+          make deploy

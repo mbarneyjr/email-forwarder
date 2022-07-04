@@ -13,6 +13,7 @@ exports.handler = async function(event, context) {
   }
 
   const email = parseEmail(messageInfo);
+  console.log(`Email: ${email}`);
 
   const ses = new AWS.SES();
   const response = await ses.sendRawEmail({ RawMessage: { Data: email } }).promise();
