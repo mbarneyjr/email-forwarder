@@ -11,6 +11,8 @@ env:
   ENVIRONMENT_NAME: dev
   FROM_ADDRESS: dev.mbarney.me
   TO_ADDRESS: mbarneyme@gmail.com
+  ARTIFACT_BUCKET: ci-artifacts-512329539140-us-east-1
+  ARTIFACT_PREFIX: email-forwarder
 
 permissions:
   id-token: write
@@ -30,7 +32,7 @@ jobs:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ env.TARGET_ACCOUNT_ID }}:role/github-actions
           role-session-name: GitHubActions-${{ github.run_id }}
-      - name: Deploy hosting infrastructure
+      - name: Deploy
         id: deploy_hosting
         run: |
           make deploy
