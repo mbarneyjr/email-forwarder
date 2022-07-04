@@ -23,7 +23,7 @@ jobs:
     env:
       TARGET_ACCOUNT_ID: 636764172597
       ENVIRONMENT_NAME: qa
-      FROM_ADDRESS: qa.mbarney.me
+      FROM_ADDRESS: email-forwarder@qa.mbarney.me
       TO_ADDRESS: mbarneyme@gmail.com
     steps:
       - uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
     env:
       TARGET_ACCOUNT_ID: 466268039534
       ENVIRONMENT_NAME: prod
-      FROM_ADDRESS: mbarney.me
+      FROM_ADDRESS: email-forwarder@mbarney.me
       TO_ADDRESS: mbarneyme@gmail.com
     steps:
       - uses: actions/checkout@v2

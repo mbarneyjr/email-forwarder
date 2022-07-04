@@ -9,7 +9,7 @@ env:
   TARGET_ACCOUNT_ID: 101010036321
   APPLICATION_NAME: email-forwarder
   ENVIRONMENT_NAME: dev
-  FROM_ADDRESS: dev.mbarney.me
+  FROM_ADDRESS: email-forwarder@dev.mbarney.me
   TO_ADDRESS: mbarneyme@gmail.com
   ARTIFACT_BUCKET: ci-artifacts-512329539140-us-east-1
   ARTIFACT_PREFIX: email-forwarder
